@@ -40,7 +40,6 @@ gulp.task('move-js', function() {
   return gulp
     .src([
       'node_modules/bootstrap/dist/js/bootstrap.min.js',
-      'node_modules/tether/dist/js/tether.min.js',
       'node_modules/jquery/dist/jquery.min.js'
     ])
     .pipe(cached())
@@ -64,6 +63,14 @@ gulp.task('move-images', function() {
     .pipe(browserSync.stream());
 });
 
+gulp.task('move-css', function() {
+  return gulp
+    .src(['src/css/**/*'])
+    .pipe(cached())
+    .pipe(gulp.dest('dist/css'))
+    .pipe(browserSync.stream());
+});
+
 gulp.task('move-html', function() {
   var result = gulp
     .src(['src/**/*.html'])
@@ -82,7 +89,7 @@ gulp.task('launch-server', function() {
   gulp.watch(['src/img/**/*'], ['move-images']);
 });
 
-gulp.task('build', ['compile-sass', 'compile-js', 'move-html', 'move-js', 'move-fonts', 'move-images']);
+gulp.task('build', ['compile-sass', 'compile-js', 'move-html', 'move-css', 'move-js', 'move-fonts', 'move-images']);
 
 // Default task - run through all build and copy tasks
 gulp.task('default', ['build', 'launch-server']);
