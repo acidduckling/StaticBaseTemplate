@@ -5,6 +5,7 @@ var cssnano = require('gulp-cssnano');
 var sourcemaps = require('gulp-sourcemaps');
 var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
+var cached = require('gulp-cached');
 
 gulp.task('compile-sass', function() {
   return gulp
@@ -13,6 +14,7 @@ gulp.task('compile-sass', function() {
       'node_modules/font-awesome/scss/font-awesome.scss',
       'src/scss/*.scss'
     ])
+    .pipe(cached())
     .pipe(sourcemaps.init())
     .pipe(sass().on('error', sass.logError))
     .pipe(cssnano())
@@ -29,6 +31,7 @@ gulp.task('compile-sass', function() {
 gulp.task('compile-js', function() {
   return gulp
     .src('src/js/*.js')
+    .pipe(cached())
     .pipe(sourcemaps.init())
     .pipe(
       uglify({
@@ -48,6 +51,7 @@ gulp.task('move-js', function() {
       'node_modules/tether/dist/js/tether.min.js',
       'node_modules/jquery/dist/jquery.min.js'
     ])
+    .pipe(cached())
     .pipe(gulp.dest('dist/js/'))
     .pipe(browserSync.stream());
 });
@@ -55,12 +59,24 @@ gulp.task('move-js', function() {
 gulp.task('move-fonts', function() {
   return gulp
     .src(['node_modules/font-awesome/fonts/*', 'src/fonts/**/*'])
+    .pipe(cached())
     .pipe(gulp.dest('dist/fonts'))
     .pipe(browserSync.stream());
 });
 
+gulp.task('move-images', function() {
+  return gulp
+    .src(['src/img/**/*'])
+    .pipe(cached())
+    .pipe(gulp.dest('dist/img'))
+    .pipe(browserSync.stream());
+});
+
 gulp.task('move-html', function() {
-  var result = gulp.src(['src/**/*.html']).pipe(gulp.dest('dist/'));
+  var result = gulp
+    .src(['src/**/*.html'])
+    .pipe(cached())
+    .pipe(gulp.dest('dist/'));
   if (browserSync.active) browserSync.reload();
   return result;
 });
@@ -77,16 +93,16 @@ gulp.task('launch-server', function() {
   gulp.watch(['src/scss/*.scss'], ['compile-sass']);
   gulp.watch(['src/js/*.js'], ['compile-sass']);
   gulp.watch(['src/*.html'], ['move-html']);
+  gulp.watch(['src/img/**/*'], ['move-images']);
 });
 
-// Run gulp
-// Launch server and browser
-// execute JS task
+// Default task - run through all build and copy tasks
 gulp.task('default', [
   'compile-sass',
   'compile-js',
   'move-html',
   'move-js',
   'move-fonts',
+  'move-images',
   'launch-server'
 ]);
