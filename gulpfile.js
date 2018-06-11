@@ -1,11 +1,14 @@
+require('dotenv').config();
 var gulp = require('gulp');
+var util = require('gulp-util');
 var browserSync = require('browser-sync').create();
 var sass = require('gulp-sass');
-var cssnano = require('gulp-cssnano');
 var sourcemaps = require('gulp-sourcemaps');
 var uglify = require('gulp-uglify');
-var rename = require('gulp-rename');
 var cached = require('gulp-cached');
+
+console.log('Current Environment: ' + process.env.ENVIRONMENT);
+var isProd = process.env.ENVIRONMENT && process.env.ENVIRONMENT.toLowerCase() === 'production';
 
 gulp.task('compile-sass', function() {
   return gulp
@@ -16,14 +19,8 @@ gulp.task('compile-sass', function() {
     ])
     .pipe(cached())
     .pipe(sourcemaps.init())
-    .pipe(sass().on('error', sass.logError))
-    .pipe(cssnano())
+    .pipe(sass({ outputStyle: isProd ? 'compressed' : 'nested' }).on('error', sass.logError))
     .pipe(sourcemaps.write('./maps/'))
-    .pipe(
-      rename({
-        extname: '.min.css'
-      })
-    )
     .pipe(gulp.dest('dist/css'))
     .pipe(browserSync.stream());
 });
@@ -33,13 +30,8 @@ gulp.task('compile-js', function() {
     .src('src/js/*.js')
     .pipe(cached())
     .pipe(sourcemaps.init())
-    .pipe(
-      uglify({
-        compress: true,
-        mangle: true
-      })
-    )
-    .pipe(sourcemaps.write('dist/js/maps/'))
+    .pipe(isProd ? uglify({ compress: true, mangle: true }) : util.noop())
+    .pipe(sourcemaps.write('maps/'))
     .pipe(gulp.dest('dist/js'))
     .pipe(browserSync.stream());
 });
@@ -81,28 +73,16 @@ gulp.task('move-html', function() {
   return result;
 });
 
-// Run sass when server runs
-// Run server
-// Watch for any changes in src/scss folder and reload the browser
-// Watch for HTML changes
+// Launch Server and Watches
 gulp.task('launch-server', function() {
-  browserSync.init({
-    server: './dist/',
-    open: false
-  });
+  browserSync.init({ server: './dist/', open: false });
   gulp.watch(['src/scss/*.scss'], ['compile-sass']);
-  gulp.watch(['src/js/*.js'], ['compile-sass']);
+  gulp.watch(['src/js/*.js'], ['compile-js']);
   gulp.watch(['src/*.html'], ['move-html']);
   gulp.watch(['src/img/**/*'], ['move-images']);
 });
 
+gulp.task('build', ['compile-sass', 'compile-js', 'move-html', 'move-js', 'move-fonts', 'move-images']);
+
 // Default task - run through all build and copy tasks
-gulp.task('default', [
-  'compile-sass',
-  'compile-js',
-  'move-html',
-  'move-js',
-  'move-fonts',
-  'move-images',
-  'launch-server'
-]);
+gulp.task('default', ['build', 'launch-server']);
